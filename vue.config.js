@@ -1,6 +1,7 @@
 'use strict'
 const path = require('path')
 const defaultSettings = require('./src/settings.js')
+const UnoCSS = require('@unocss/webpack').default
 
 function resolve(dir) {
   return path.join(__dirname, dir)
@@ -42,13 +43,22 @@ module.exports = {
     // provide the app's title in webpack's name field, so that
     // it can be accessed in index.html to inject the correct title.
     name: name,
+    plugins: [
+      UnoCSS({})
+    ],
     resolve: {
       alias: {
         '@': resolve('src')
       }
-    }
+    },
+    cache: false
   },
   chainWebpack(config) {
+    config.module.rule('vue').uses.delete('cache-loader')
+    config.module.rule('tsx').uses.delete('cache-loader')
+    config.merge({
+      cache: false
+    })
     // it can improve the speed of the first screen, it is recommended to turn on preload
     config.plugin('preload').tap(() => [
       {
@@ -119,5 +129,21 @@ module.exports = {
           config.optimization.runtimeChunk('single')
         }
       )
+  },
+  css: {
+    extract: {
+      filename: '[name].[hash:9].css'
+    },
+    sourceMap: false,
+    loaderOptions: {
+      sass: {},
+      postcss: {
+        plugins: [
+          require('@unocss/postcss')({
+            content: ['**/*.{html,js,ts,jsx,tsx,vue,svelte,astro}']
+          })
+        ]
+      }
+    }
   }
 }
